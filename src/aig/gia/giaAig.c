@@ -728,6 +728,121 @@ int Gia_ManSolveSat( Gia_Man_t * p )
     return RetValue;
 }
 
+int Gia_ManAppendCi( Gia_Man_t * p )  
+{ 
+    Gia_Obj_t * pObj = Gia_ManAppendObj( p );
+    pObj->fTerm = 1;
+    pObj->iDiff0 = GIA_NONE;
+    pObj->iDiff1 = Vec_IntSize( p->vCis );
+    Vec_IntPush( p->vCis, Gia_ObjId(p, pObj) );
+    return Gia_ObjId( p, pObj ) << 1;
+}
+
+int Gia_ManAppendCo( Gia_Man_t * p, int iLit0 )  
+{ 
+    Gia_Obj_t * pObj;
+    assert( iLit0 >= 0 && Abc_Lit2Var(iLit0) < Gia_ManObjNum(p) );
+    assert( !Gia_ObjIsCo(Gia_ManObj(p, Abc_Lit2Var(iLit0))) );
+    pObj = Gia_ManAppendObj( p );    
+    pObj->fTerm = 1;
+    pObj->iDiff0  = Gia_ObjId(p, pObj) - Abc_Lit2Var(iLit0);
+    pObj->fCompl0 = Abc_LitIsCompl(iLit0);
+    pObj->iDiff1  = Vec_IntSize( p->vCos );
+    Vec_IntPush( p->vCos, Gia_ObjId(p, pObj) );
+    if ( p->pFanData )
+        Gia_ObjAddFanout( p, Gia_ObjFanin0(pObj), pObj );
+    return Gia_ObjId( p, pObj ) << 1;
+}
+
+int Gia_ManAppendAnd2( Gia_Man_t * p, int iLit0, int iLit1 )  
+{ 
+    if ( !p->fGiaSimple )
+    {
+        if ( iLit0 < 2 )
+            return iLit0 ? iLit1 : 0;
+        if ( iLit1 < 2 )
+            return iLit1 ? iLit0 : 0;
+        if ( iLit0 == iLit1 )
+            return iLit1;
+        if ( iLit0 == Abc_LitNot(iLit1) )
+            return 0;
+    }
+    return Gia_ManAppendAnd( p, iLit0, iLit1 );
+}
+
+int Gia_ManPiNum( Gia_Man_t * p )
+{
+  return Vec_IntSize(p->vCis) - p->nRegs;
+}
+
+int Gia_ManPoNum( Gia_Man_t * p )
+{
+  return Vec_IntSize(p->vCos) - p->nRegs;
+}
+
+int Gia_ManAndNum( Gia_Man_t * p )
+{
+  return p->nObjs - Vec_IntSize(p->vCis) - Vec_IntSize(p->vCos) - 1;
+}
+
+Gia_Obj_t *  Gia_ManCi( Gia_Man_t * p, int v )
+{
+  return Gia_ManObj( p, Vec_IntEntry(p->vCis,v) );
+}
+
+int Gia_Obj2Lit( Gia_Man_t * p, Gia_Obj_t * pObj )
+{
+  return Abc_Var2Lit(Gia_ObjId(p, Gia_Regular(pObj)), Gia_IsComplement(pObj));
+}
+
+int Gia_ManObjNum( Gia_Man_t * p )
+{
+  return p->nObjs;
+}
+
+int Gia_ObjIsAnd( Gia_Obj_t * pObj )
+{
+  return!pObj->fTerm && pObj->iDiff0 != GIA_NONE;
+} 
+
+Gia_Obj_t * Gia_ManCo( Gia_Man_t * p, int v )
+{
+  return Gia_ManObj( p, Vec_IntEntry(p->vCos,v) );
+}
+
+Gia_Obj_t * Gia_ManObj( Gia_Man_t * p, int v )
+{
+  assert( v >= 0 && v < p->nObjs );
+  return p->pObjs + v;
+}
+
+int Gia_ObjIsPi( Gia_Man_t * p, Gia_Obj_t * pObj )
+{
+  return Gia_ObjIsCi(pObj) && Gia_ObjCioId(pObj) < Gia_ManPiNum(p);
+}
+
+Gia_Obj_t * Gia_ObjFanin0( Gia_Obj_t * pObj )
+{
+  return pObj - pObj->iDiff0;
+}
+
+Gia_Obj_t * Gia_ObjFanin1( Gia_Obj_t * pObj )
+{
+  return pObj - pObj->iDiff1;
+}
+
+int Gia_IsComplement( Gia_Obj_t * p )
+{
+  return (int)((ABC_PTRUINT_T)(p) & 01);
+}
+
+Gia_Obj_t *  Gia_Regular( Gia_Obj_t * p )        { return (Gia_Obj_t *)((ABC_PTRUINT_T)(p) & ~01);                           }
+Gia_Obj_t *  Gia_Not( Gia_Obj_t * p )            { return (Gia_Obj_t *)((ABC_PTRUINT_T)(p) ^  01);                           }
+Gia_Obj_t *  Gia_ManConst0( Gia_Man_t * p )      { return p->pObjs;                                                          }
+Gia_Obj_t *  Gia_ManConst1( Gia_Man_t * p )      { return Gia_Not(Gia_ManConst0(p));                                         }
+int          Gia_ObjId( Gia_Man_t * p, Gia_Obj_t * pObj )        { assert( p->pObjs <= pObj && pObj < p->pObjs + p->nObjs ); return pObj - p->pObjs; }
+int          Gia_ObjFaninC0( Gia_Obj_t * pObj )                  { return pObj->fCompl0;        }
+int          Gia_ObjFaninC1( Gia_Obj_t * pObj )                  { return pObj->fCompl1;        }
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
