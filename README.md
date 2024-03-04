@@ -9,4 +9,4 @@ Some code in mockturtle is only available when configured and compiled with the 
 Compile with command `make ABC_USE_NAMESPACE=abc ABC_USE_NO_READLINE=1 ABC_USE_NO_CUDD=1 libabc.a`, then move the obtained `libabc.a` file to `mockturtle/lib/abc_static/`.
 
 ### Download a precompiled library file
-Download a precompiled library (.a) file according to your OS in [release](https://github.com/lsils/abc-staticlib/releases), then place it in `mockturtle/lib/abc_static/`.
+Download a precompiled library (.a) file according to your OS in [release](https://github.com/lsils/abc-staticlib/releases), rename it as `libabc.a` and place it in `mockturtle/lib/abc_static/`.
